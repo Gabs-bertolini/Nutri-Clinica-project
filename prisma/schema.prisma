@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                            String         @id @default(cuid())
+  name                          String
+  email                         String         @unique
+  password                      String
+  role                          String         @default("PATIENT")
+  createdAt                     DateTime       @default(now())
+  updatedAt                     DateTime       @updatedAt
+  patient                       Patient?
+  consultationsAsNutritionist   Consultation[] @relation("NutritionistConsultations")
+  answeredDoubts                Doubt[]        @relation("NutritionistAnswers")
+}
+
+model Patient {
+  id            String         @id @default(cuid())
+  userId        String         @unique
+  birthDate     DateTime?
+  gender        String?
+  contact       String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  consultations Consultation[]
+  doubts        Doubt[]
+}
+
+model Consultation {
+  id             String             @id @default(cuid())
+  patientId      String
+  nutritionistId String
+  date           DateTime
+  status         String             @default("SCHEDULED")
+  notes          String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  patient        Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  nutritionist   User               @relation("NutritionistConsultations", fields: [nutritionistId], references: [id], onDelete: Cascade)
+}
+
+model Doubt {
+  id             String   @id @default(cuid())
+  title          String
+  question       String
+  answerText     String?
+  isPublic       Boolean  @default(true)
+  patientId      String
+  nutritionistId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  patient        Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  nutritionist   User?    @relation("NutritionistAnswers", fields: [nutritionistId], references: [id], onDelete: SetNull)
+}
